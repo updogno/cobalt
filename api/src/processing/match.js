@@ -1,4 +1,5 @@
 import { strict as assert } from "node:assert";
+import { ProxyAgent } from "undici";
 
 import { env } from "../config.js";
 import { createResponse } from "../processing/request.js";
@@ -35,7 +36,7 @@ let freebind;
 export default async function({ host, patternMatch, params, authType }) {
     const { url } = params;
     assert(url instanceof URL);
-    let dispatcher, requestIP;
+    let dispatcher, requestIP, proxyToUse;
 
     if (env.freebindCIDR) {
         if (!freebind) {
@@ -44,6 +45,11 @@ export default async function({ host, patternMatch, params, authType }) {
 
         requestIP = freebind.ip.random(env.freebindCIDR);
         dispatcher = freebind.dispatcherFromIP(requestIP, { strict: false });
+    }
+
+    if (env.proxies) {
+        proxyToUse = env.proxies[Math.floor(Math.random() * env.proxies.length)];
+        dispatcher = new ProxyAgent(proxyToUse);
     }
 
     try {
@@ -328,6 +334,7 @@ export default async function({ host, patternMatch, params, authType }) {
             filenameStyle: params.filenameStyle,
             convertGif: params.convertGif,
             requestIP,
+            proxyToUse,
             audioBitrate: params.audioBitrate,
             alwaysProxy: params.alwaysProxy || localProcessing === "forced",
             localProcessing,

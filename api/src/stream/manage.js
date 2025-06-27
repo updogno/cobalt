@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { randomBytes } from "crypto";
 import { strict as assert } from "assert";
 import { setMaxListeners } from "node:events";
+import { ProxyAgent } from "undici";
 
 import { env } from "../config.js";
 import { closeRequest } from "./shared.js";
@@ -32,6 +33,7 @@ export function createStream(obj) {
             filename: obj.filename,
 
             requestIP: obj.requestIP,
+            proxyToUse: obj.proxyToUse,
             headers: obj.headers,
 
             metadata: obj.fileMetadata || false,
@@ -86,6 +88,7 @@ export function createProxyTunnels(info) {
         type: "proxy",
         headers: info?.headers,
         requestIP: info?.requestIP,
+        proxyToUse: info?.proxyToUse,
     }
 
     for (const url of urls) {
@@ -142,6 +145,10 @@ export function createInternalStream(url, obj = {}, isSubtitles) {
     let dispatcher = obj.dispatcher;
     if (obj.requestIP) {
         dispatcher = freebind?.dispatcherFromIP(obj.requestIP, { strict: false })
+    }
+
+    if (obj.proxyToUse) {
+        dispatcher = new ProxyAgent(obj.proxyToUse);
     }
 
     const streamID = nanoid();

@@ -58,6 +58,7 @@ export const loadEnvs = (env = process.env) => {
             delete process.env[key];
         }
     }
+    const proxyList = env.MEOWING_PROXIES?.split(",");
 
     return {
         apiURL: env.API_URL || '',
@@ -66,6 +67,8 @@ export const loadEnvs = (env = process.env) => {
 
         listenAddress: env.API_LISTEN_ADDRESS,
         freebindCIDR: process.platform === 'linux' && env.FREEBIND_CIDR,
+
+        proxies: proxyList,
 
         corsWildcard: env.CORS_WILDCARD !== '0',
         corsURL: env.CORS_URL,
