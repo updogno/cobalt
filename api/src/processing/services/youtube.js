@@ -61,6 +61,8 @@ const clientsWithNoCipher = ['IOS', 'ANDROID', 'YTSTUDIO_ANDROID', 'YTMUSIC_ANDR
 
 const videoQualities = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320];
 
+let unavailableResponses = 0;
+
 const cloneInnertube = async (customFetch, useSession) => {
     const shouldRefreshPlayer = lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
 
@@ -290,6 +292,8 @@ export default async function (o) {
     switch (playability.status) {
         case "LOGIN_REQUIRED":
             if (playability.reason.endsWith("bot")) {
+                // Instantly refresh
+                lastRefreshedAt = +new Date();
                 return { error: "youtube.login" }
             }
             if (playability.reason.endsWith("age") || playability.reason.endsWith("inappropriate for some users.")) {
@@ -317,6 +321,12 @@ export default async function (o) {
     }
 
     if (playability.status !== "OK") {
+        // Force refresh player once we get 10 unavailable videos
+        unavailableResponses ??= 0;
+        if (unavailableResponses++ > 10) {
+            lastRefreshedAt = +new Date(0);
+            unavailableResponses = 0;
+        }
         return { error: "content.video.unavailable" };
     }
 
