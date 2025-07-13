@@ -77,6 +77,7 @@ async function handleChunkedStream(streamInfo, res) {
         const size = BigInt(req.headers.get('content-length'));
 
         if (req.status !== 200 || !size) {
+            globalThis.FORCE_RESET_INNERTUBE_PLAYER = true;
             return cleanup();
         }
 

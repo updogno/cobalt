@@ -64,7 +64,7 @@ const videoQualities = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320];
 let unavailableResponses = 0;
 
 const cloneInnertube = async (customFetch, useSession) => {
-    const shouldRefreshPlayer = lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
+    const shouldRefreshPlayer = globalThis.FORCE_RESET_INNERTUBE_PLAYER || lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
 
     const rawCookie = getCookie('youtube');
     const cookie = rawCookie?.toString();
@@ -77,6 +77,7 @@ const cloneInnertube = async (customFetch, useSession) => {
     }
 
     if (!innertube || shouldRefreshPlayer) {
+        globalThis.FORCE_RESET_INNERTUBE_PLAYER = false;
         let player_id;
         if (env.ytPlayerIds) {
             player_id = env.ytPlayerIds[
@@ -293,7 +294,7 @@ export default async function (o) {
         case "LOGIN_REQUIRED":
             if (playability.reason.endsWith("bot")) {
                 // Instantly refresh
-                lastRefreshedAt = +new Date();
+                lastRefreshedAt = +new Date(0);
                 return { error: "youtube.login" }
             }
             if (playability.reason.endsWith("age") || playability.reason.endsWith("inappropriate for some users.")) {
