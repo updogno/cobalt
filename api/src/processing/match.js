@@ -317,7 +317,7 @@ export default async function({ host, patternMatch, params, authType }) {
 
         let localProcessing = params.localProcessing;
         const lpEnv = env.forceLocalProcessing;
-        const shouldForceLocal = lpEnv === "always" || (lpEnv === "session" && authType === "session");
+        const shouldForceLocal = lpEnv === "always" || (lpEnv === "session" && ["session", "none"].includes(authType));
         const localDisabled = (!localProcessing || localProcessing === "disabled");
 
         if (shouldForceLocal && localDisabled) {
