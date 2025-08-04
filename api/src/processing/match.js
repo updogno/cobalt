@@ -47,6 +47,15 @@ export default async function({ host, patternMatch, params, authType }) {
         dispatcher = freebind.dispatcherFromIP(requestIP, { strict: false });
     }
 
+    if (env.sourceIps) {
+        if (!freebind) {
+            freebind = await import('freebind');
+        }
+
+        requestIP = env.sourceIps[Math.floor(Math.random() * env.sourceIps.length)];
+        dispatcher = freebind.dispatcherFromIP(requestIP, { strict: false });
+    }
+
     if (env.proxies) {
         proxyToUse = env.proxies[Math.floor(Math.random() * env.proxies.length)];
         dispatcher = new ProxyAgent(proxyToUse);
