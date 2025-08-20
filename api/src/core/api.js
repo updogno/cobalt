@@ -1,5 +1,6 @@
 import cors from "cors";
 import http from "node:http";
+import ipaddr from "ipaddr.js";
 import rateLimit from "express-rate-limit";
 import { setGlobalDispatcher, EnvHttpProxyAgent } from "undici";
 import { getCommit, getBranch, getRemote, getVersion } from "@imput/version-info";
@@ -44,17 +45,25 @@ const fail = (res, code, context) => {
     res.status(status).json(body);
 }
 
+const isSessionRequired = (ip) => {
+    if (env.sessionEnabled) return true;
+    if (!env.sessionRequiredCIDRs) return false;
+
+    const parsedIp = ipaddr.parse(ip);
+    return env.sessionRequiredCIDRs.some(cidr => parsedIp.kind == cidr[0].kind && parsedIp.match(cidr));
+}
+
 export const runAPI = async (express, app, __dirname, isPrimary = true) => {
     const startTime = new Date();
     const startTimestamp = startTime.getTime();
 
-    const getServerInfo = () => {
+    const getServerInfo = (ip) => {
         return JSON.stringify({
             cobalt: {
                 version: version,
                 url: env.apiURL,
                 startTime: `${startTimestamp}`,
-                turnstileSitekey: env.sessionEnabled ? env.turnstileSitekey : undefined,
+                turnstileSitekey: isSessionRequired(ip) ? env.turnstileSitekey : undefined,
                 services: [...env.enabledServices].map(e => {
                     return friendlyServiceName(e);
                 }),
@@ -62,8 +71,6 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
             git,
         });
     }
-
-    const serverInfo = getServerInfo();
 
     const handleRateExceeded = (_, res) => {
         const { body } = createResponse("error", {
@@ -147,7 +154,7 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
             //    rate limit configuration;
             // otherwise, we reject the request.
             if (
-                (env.sessionEnabled || !env.authRequired)
+                (isSessionRequired(getIP(req)) || !env.authRequired)
                 && ['missing', 'not_api_key'].includes(error)
             ) {
                 return next();
@@ -161,7 +168,7 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
     });
 
     app.post('/', (req, res, next) => {
-        if (!env.sessionEnabled || req.rateLimitKey) {
+        if (!isSessionRequired(getIP(req)) || req.rateLimitKey) {
             return next();
         }
 
@@ -207,7 +214,7 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
     });
 
     app.post("/session", sessionLimiter, async (req, res) => {
-        if (!env.sessionEnabled) {
+        if (!isSessionRequired(getIP(req))) {
             return fail(res, "error.api.auth.not_configured")
         }
 
@@ -316,9 +323,9 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
         return stream(res, streamInfo);
     });
 
-    app.get('/', (_, res) => {
+    app.get('/', (req, res) => {
         res.type('json');
-        res.status(200).send(env.envFile ? getServerInfo() : serverInfo);
+        res.status(200).send(getServerInfo(getIP(req)));
     })
 
     app.get('/favicon.ico', (req, res) => {
@@ -331,6 +338,7 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
 
     // handle all express errors
     app.use((_, __, res, ___) => {
+        console.error(_);
         return fail(res, "error.api.generic");
     })
 
