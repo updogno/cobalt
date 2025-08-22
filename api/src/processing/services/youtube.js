@@ -309,6 +309,10 @@ export default async function (o) {
             if (playability?.reason?.endsWith("request limit.")) {
                 return { error: "fetch.rate" }
             }
+            if (playability?.reason?.endsWith("bot")) {
+                lastRefreshedAt = +new Date(0);
+                return { error: "youtube.login" }
+            }
             if (playability?.error_screen?.subreason?.text?.endsWith("in your country")) {
                 return { error: "content.video.region" }
             }
