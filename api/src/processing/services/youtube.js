@@ -2,7 +2,7 @@ import HLS from "hls-parser";
 import ivm from "isolated-vm";
 
 import { fetch, Request } from "undici";
-import { Innertube, Platform, Session } from "youtubei.js";
+import { Innertube, Platform, Session, UniversalCache } from "youtubei.js";
 
 import { env } from "../../config.js";
 import { getCookie } from "../cookie/manager.js";
@@ -86,6 +86,7 @@ const cloneInnertube = async (customFetch, useSession) => {
         }
 
         innertube = await Innertube.create({
+            cache: new UniversalCache(false),
             fetch: customFetch,
             retrieve_player,
             cookie,
