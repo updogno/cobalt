@@ -31,9 +31,11 @@ import facebook from "./services/facebook.js";
 import bluesky from "./services/bluesky.js";
 import newgrounds from "./services/newgrounds.js";
 
+const MAX_RETRY_AMOUNT = 5;
+
 let freebind;
 
-export default async function({ host, patternMatch, params, authType }) {
+export default async function match({ host, patternMatch, params, authType, retryCount = 0 }) {
     const { url } = params;
     assert(url instanceof URL);
     let dispatcher, requestIP, proxyToUse;
@@ -299,6 +301,10 @@ export default async function({ host, patternMatch, params, authType }) {
         }
 
         if (r.error) {
+            if (r.retry) {
+                if (++retryCount < MAX_RETRY_AMOUNT)
+                    return await match({ host, patternMatch, params, authType, retryCount });
+            }
             let context;
             switch(r.error) {
                 case "content.too_long":

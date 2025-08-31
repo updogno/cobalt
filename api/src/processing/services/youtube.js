@@ -295,7 +295,7 @@ export default async function (o) {
             if (playability.reason.endsWith("bot")) {
                 // Instantly refresh
                 lastRefreshedAt = +new Date(0);
-                return { error: "youtube.login" }
+                return { error: "youtube.login", retry: true }
             }
             if (playability.reason.endsWith("age") || playability.reason.endsWith("inappropriate for some users.")) {
                 return { error: "content.video.age" }
@@ -311,7 +311,7 @@ export default async function (o) {
             }
             if (playability?.reason?.endsWith("bot")) {
                 lastRefreshedAt = +new Date(0);
-                return { error: "youtube.login" }
+                return { error: "youtube.login", retry: true }
             }
             if (playability?.error_screen?.subreason?.text?.endsWith("in your country")) {
                 return { error: "content.video.region" }
