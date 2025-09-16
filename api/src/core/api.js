@@ -116,7 +116,7 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
         }
     });
 
-    app.set('trust proxy', ['loopback', 'uniquelocal']);
+    app.set('trust proxy', ['loopback', 'uniquelocal', '100.64.0.0/10']);
 
     app.use('/', cors({
         methods: ['GET', 'POST'],
