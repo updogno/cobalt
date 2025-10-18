@@ -222,10 +222,10 @@ export default async function (o) {
         );
 
     // we can get subtitles reliably only from the iOS client
-    if (o.subtitleLang) {
-        innertubeClient = "IOS";
-        useSession = false;
-    }
+    // if (o.subtitleLang) {
+    //     innertubeClient = "IOS";
+    //     useSession = false;
+    // }
 
     if (useSession) {
         innertubeClient = env.ytSessionInnertubeClient || "WEB_EMBEDDED";
