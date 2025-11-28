@@ -6,6 +6,7 @@ import { Innertube, Platform, Session, UniversalCache } from "youtubei.js";
 
 import { env } from "../../config.js";
 import { getCookie } from "../cookie/manager.js";
+import { createStream } from "../../stream/manage.js";
 import { getYouTubeSession } from "../helpers/youtube-session.js";
 
 // https://github.com/LuanRT/YouTube.js/pull/1052
@@ -192,6 +193,55 @@ const getSubtitles = async (info, dispatcher, subtitleLang) => {
     }
 }
 
+/**
+ * @param {Innertube} yt 
+ * @param {*} o 
+ */
+const fetchPost = async (yt, o) => {
+    const fixImageResolution = (imageUrl) => {
+        let url = imageUrl;
+        const imageModSeparator = url.indexOf("=");
+        if (imageModSeparator) {
+            // w0 = highest res, ip = do not strip metadata, rp = force png output
+            url = url.substring(0, imageModSeparator) + "=w0-ip-rp";
+        }
+
+        return url;
+    };
+
+    // channel id does just.. not seem to matter at all
+    const postFeed = await yt.getPost(o.postId, "a");
+    if (!postFeed.posts.length) return { error: "fetch.empty" };
+
+    const [ post ] = postFeed.posts;
+    switch (post.attachment?.type) {
+        case "PostMultiImage":
+            const picker = post.attachment.images.map((image, i) => {
+                const proxiedImage = createStream({
+                    service: "youtube",
+                    type: "proxy",
+                    url: fixImageResolution(image.image[0].url),
+                    filename: `youtube_${o.postId}_${i + 1}.png`
+                });
+
+                return {
+                    type: "photo",
+                    url: proxiedImage
+                };
+            });
+
+            return { picker };
+        case "BackstageImage":
+            return {
+                urls: fixImageResolution(post.attachment.image[0].url),
+                isPhoto: true,
+                filename: `youtube_${o.postId}.png`
+            };
+        default:
+            return { error: "fetch.empty" };
+    }
+}
+
 export default async function (o) {
     const quality = o.quality === "max" ? 9000 : Number(o.quality);
 
@@ -262,6 +312,10 @@ export default async function (o) {
         } else if (e.message?.includes("refresh access token")) {
             return { error: "youtube.token_expired" }
         } else throw e;
+    }
+
+    if (!o.id && o.postId) {
+        return await fetchPost(yt, o);
     }
 
     let info;
