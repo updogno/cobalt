@@ -335,6 +335,15 @@ export default async function (o) {
         }
 
         if (e?.message === "This video is unavailable") {
+            // there's this weird error 18 that persisted
+            // across an innertube session for me
+            // resetting the session seems to fix it
+            // temporarily?
+            if (e?.info?.error_screen?.subreason?.text == "Error code: 18") {
+                lastRefreshedAt = +new Date(0);
+                return { error: "content.video.unavailable", retry: true };
+            }
+
             return { error: "content.video.unavailable" };
         }
 
