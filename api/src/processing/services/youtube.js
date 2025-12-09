@@ -339,8 +339,12 @@ export default async function (o) {
             // across an innertube session for me
             // resetting the session seems to fix it
             // temporarily?
-            if (e?.info?.error_screen?.subreason?.text == "Error code: 18") {
+
+            // Error code: 152 - 18
+            // Error code: 18
+            if (e?.info?.error_screen?.subreason?.toString()?.endsWith(" 18")) {
                 lastRefreshedAt = +new Date(0);
+                console.log(e.info.error_screen.subreason);
                 return { error: "content.video.unavailable", retry: true };
             }
 
