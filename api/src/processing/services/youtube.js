@@ -24,8 +24,10 @@ Platform.shim.eval = async (data) => {
 }
 
 const PLAYER_REFRESH_PERIOD = 1000 * 60 * 15; // ms
+const MINTER_REFRESH_PERIOD = 1000 * 60 * 60 * 6;
 
 let innertube, lastRefreshedAt;
+let poMinter, poMinterLastRefresh = 0;
 
 const codecList = {
     h264: {
@@ -64,8 +66,34 @@ const videoQualities = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320];
 
 let unavailableResponses = 0;
 
+
+/**
+ * @type {typeof import("../helpers/youtube-po.js")}
+ */
+let poModule;
+
 let encryptedHostFlags = "";
 const cloneInnertube = async (customFetch, useSession) => {
+    Platform.shim.eval = youtubeEval;
+
+    if (env.ytGeneratePoTokens) {
+        if (!poModule) {
+            // Importing this helper also needs BGUtils and JSDOM,
+            // I'm importing them dynamically here so a) startup
+            // doesn't get delayed and b) so I can mark these
+            // dependencies as optional
+            poModule = await import("../helpers/youtube-po.js");
+        }
+
+        if (!poMinter || +new Date() > poMinterLastRefresh + MINTER_REFRESH_PERIOD) {
+            poMinter?.then(minter => minter.remove()).catch(() => {});
+            poMinter = poModule.getMinter({ fetch: customFetch });
+            poMinterLastRefresh = +new Date();
+        }
+    }
+
+    
+
     const shouldRefreshPlayer = globalThis.FORCE_RESET_INNERTUBE_PLAYER || lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
 
     const rawCookie = getCookie('youtube');
@@ -97,6 +125,12 @@ const cloneInnertube = async (customFetch, useSession) => {
             enable_session_cache: false,
             player_id,
         });
+
+        if (env.ytGeneratePoTokens) {
+            const { minter } = await poMinter;
+            innertube.session.po_token = await minter.mintAsWebsafeString(innertube.session.context.client.visitorData);
+        }
+
         lastRefreshedAt = +new Date();
 
         const embedResp = await customFetch("https://youtube.com/embed/QfKmnuHMpYo", {
@@ -104,7 +138,7 @@ const cloneInnertube = async (customFetch, useSession) => {
                 "Referer": "https://www.google.com"
             }
         })
-            .then(r => r.text());
+        .then(r => r.text());
         
         const hostFlagsMatch = /encryptedHostFlags":"(.+?)"/.exec(embedResp);
         if (hostFlagsMatch?.length > 1) {
@@ -124,7 +158,7 @@ const cloneInnertube = async (customFetch, useSession) => {
         cookie,
         customFetch ?? innertube.session.http.fetch,
         innertube.session.cache,
-        sessionTokens?.potoken
+        innertube.session.po_token ?? sessionTokens?.potoken
     );
 
     const yt = new Innertube(session);
@@ -347,6 +381,9 @@ export default async function (o) {
                     lactMilliseconds: '-1',
                     signatureTimestamp: yt.session.player?.signature_timestamp,
                 }
+            },
+            serviceIntegrityDimensions: {
+                poToken: yt.session.po_token
             }
         });
 
