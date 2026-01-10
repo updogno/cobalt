@@ -67,12 +67,29 @@ const videoQualities = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320];
 let unavailableResponses = 0;
 
 
+
+let encryptedHostFlags = "";
+const fetchEncryptedHostFlags = async (fetch) => {
+    const embedResp = await fetch("https://youtube.com/embed/QfKmnuHMpYo", {
+        headers: {
+            "Referer": "https://www.google.com"
+        }
+    })
+    .then(r => r.text());
+    
+    const hostFlagsMatch = /encryptedHostFlags":"(.+?)"/.exec(embedResp);
+    if (hostFlagsMatch?.length > 1) {
+        encryptedHostFlags = hostFlagsMatch[1];
+    } else {
+        console.error(new Date(), "Could not fetch encryptedHostFlags, no match!");
+    }
+}
+
 /**
  * @type {typeof import("../helpers/youtube-po.js")}
  */
 let poModule;
 
-let encryptedHostFlags = "";
 const cloneInnertube = async (customFetch, useSession) => {
     Platform.shim.eval = youtubeEval;
 
@@ -91,8 +108,6 @@ const cloneInnertube = async (customFetch, useSession) => {
             poMinterLastRefresh = +new Date();
         }
     }
-
-    
 
     const shouldRefreshPlayer = globalThis.FORCE_RESET_INNERTUBE_PLAYER || lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
 
@@ -132,19 +147,11 @@ const cloneInnertube = async (customFetch, useSession) => {
         }
 
         lastRefreshedAt = +new Date();
-
-        const embedResp = await customFetch("https://youtube.com/embed/QfKmnuHMpYo", {
-            headers: {
-                "Referer": "https://www.google.com"
-            }
-        })
-        .then(r => r.text());
         
-        const hostFlagsMatch = /encryptedHostFlags":"(.+?)"/.exec(embedResp);
-        if (hostFlagsMatch?.length > 1) {
-            encryptedHostFlags = hostFlagsMatch[1];
-        } else {
-            console.error(new Date(), "Could not fetch encryptedHostFlags, no match!");
+        if (!useSession && env.customInnertubeClient === "WEB_EMBEDDED") {
+            // WEB_EMBEDDED sometimes needs a property named `encryptedHostFlags`, which you
+            // can seemingly only get by extracting it out of a player response
+            await fetchEncryptedHostFlags(customFetch);
         }
     }
 
@@ -369,25 +376,31 @@ export default async function (o) {
 
     let info;
     try {
-        info = await yt.actions.execute("/player", {
+        const args = {
             videoId: o.id,
             client: innertubeClient,
             parse: true,
             playbackContext: {
                 contentPlaybackContext: {
-                    encryptedHostFlags,
                     vis: 0,
                     splay: false,
                     lactMilliseconds: '-1',
                     signatureTimestamp: yt.session.player?.signature_timestamp,
                 }
-            },
-            serviceIntegrityDimensions: {
-                poToken: yt.session.po_token
             }
-        });
+        };
 
-        // info = await yt.getBasicInfo(o.id, { client: innertubeClient });
+        if (innertubeClient === "WEB_EMBEDDED" && encryptedHostFlags) {
+            args.playbackContext.contentPlaybackContext.encryptedHostFlags = encryptedHostFlags;
+        }
+
+        if (yt.session.po_token) {
+            args.serviceIntegrityDimensions = {
+                poToken: yt.session.po_token
+            };
+        }
+
+        info = await yt.actions.execute("/player", args);
     } catch (e) {
         if (e?.info) {
             let errorInfo;
@@ -402,19 +415,6 @@ export default async function (o) {
         }
 
         if (e?.message === "This video is unavailable") {
-            // there's this weird error 18 that persisted
-            // across an innertube session for me
-            // resetting the session seems to fix it
-            // temporarily?
-
-            // Error code: 152 - 18
-            // Error code: 18
-            if (e?.info?.error_screen?.subreason?.toString()?.endsWith(" 18")) {
-                lastRefreshedAt = +new Date(0);
-                console.log(e.info.error_screen.subreason);
-                return { error: "content.video.unavailable", retry: true };
-            }
-
             return { error: "content.video.unavailable" };
         }
 
@@ -429,7 +429,6 @@ export default async function (o) {
     switch (playability.status) {
         case "LOGIN_REQUIRED":
             if (playability.reason.endsWith("bot")) {
-                // Instantly refresh
                 lastRefreshedAt = +new Date(0);
                 return { error: "youtube.login", retry: true }
             }
