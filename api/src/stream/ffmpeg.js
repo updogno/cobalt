@@ -131,7 +131,7 @@ const remux = async (streamInfo, res) => {
     } else {
         args.push(
             '-map', '0:v:0',
-            '-map', '0:a:0'
+            '-map', '0:a:0?'
         );
     }
 
