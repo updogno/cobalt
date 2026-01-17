@@ -184,6 +184,7 @@ export default function({
 
                 case "ok":
                 case "newgrounds":
+                case "bsky":
                     params = { type: "proxy" };
                     break;
 
