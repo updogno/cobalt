@@ -13,6 +13,11 @@ const defaultSettings: CobaltSettings = {
         language: defaultLocale,
         autoLanguage: true,
         hideRemuxTab: false,
+        customBackgroundUrl: "",
+        customBackgroundColor: "",
+        customSidebarColor: "",
+        customBackgroundBlur: 0,
+        customBackgroundDarken: 0,
     },
     accessibility: {
         reduceMotion: false,

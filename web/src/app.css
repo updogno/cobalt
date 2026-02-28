@@ -166,6 +166,74 @@
     );
 }
 
+/* custom theme uses dark theme as base */
+[data-theme="custom"] {
+    --primary: #000000;
+    --secondary: #e1e1e1;
+
+    --gray: #818181;
+
+    --blue: #2a7ce1;
+    --green: #37aa42;
+
+    --button: rgba(25, 25, 25, 0.85);
+    --button-hover: rgba(36, 36, 36, 0.85);
+    --button-press: rgba(42, 42, 42, 0.85);
+
+    --button-active-hover: #f9f9f9;
+
+    --button-hover-transparent: rgba(225, 225, 225, 0.1);
+    --button-press-transparent: rgba(225, 225, 225, 0.15);
+    --button-stroke: rgba(255, 255, 255, 0.05);
+    --button-text: #e1e1e1;
+    --button-box-shadow: 0 0 0 1px var(--button-stroke) inset;
+
+    --button-elevated: rgba(40, 40, 40, 0.85);
+    --button-elevated-hover: rgba(47, 47, 47, 0.85);
+    --button-elevated-press: rgba(52, 52, 52, 0.85);
+
+    --popover-glow: rgba(135, 135, 135, 0.12);
+
+    --popup-bg: rgba(25, 25, 25, 0.9);
+    --popup-stroke: rgba(255, 255, 255, 0.08);
+
+    --dialog-backdrop: rgba(0, 0, 0, 0.5);
+
+    --sidebar-bg: rgba(19, 19, 19, 0.85);
+    --sidebar-highlight: var(--secondary);
+    --sidebar-stroke: rgba(255, 255, 255, 0.04);
+
+    --content-border: rgba(255, 255, 255, 0.045);
+
+    --input-border: #383838;
+
+    --toggle-bg: var(--input-border);
+    --toggle-bg-enabled: #8a8a8a;
+
+    --sidebar-mobile-gradient: linear-gradient(
+        90deg,
+        rgba(19, 19, 19, 0.9) 0%,
+        rgba(19, 19, 19, 0) 5%,
+        rgba(19, 19, 19, 0) 50%,
+        rgba(19, 19, 19, 0) 95%,
+        rgba(19, 19, 19, 0.9) 100%
+    );
+
+    --skeleton-gradient: linear-gradient(
+        90deg,
+        var(--button),
+        var(--button-hover),
+        var(--button)
+    );
+
+    --skeleton-gradient-elevated: linear-gradient(
+        90deg,
+        var(--button-elevated),
+        var(--button-elevated-hover),
+        var(--button-elevated)
+    );
+}
+
 /* fall back to less pretty value cuz chrome doesn't support sign() */
 [data-chrome="true"] {
     --sidebar-height-mobile: calc(50px + env(safe-area-inset-bottom));
@@ -177,6 +245,10 @@
 
 [data-theme="dark"] [data-reduce-transparency="true"] {
     --dialog-backdrop: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="custom"] [data-reduce-transparency="true"] {
+    --dialog-backdrop: rgba(0, 0, 0, 0.7);
 }
 
 html,

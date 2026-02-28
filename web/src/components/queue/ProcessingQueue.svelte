@@ -3,12 +3,14 @@
     import { t } from "$lib/i18n/translations";
     import { beforeNavigate, onNavigate } from "$app/navigation";
 
+    import { openFile } from "$lib/download";
     import { clearFileStorage } from "$lib/storage/opfs";
+    import { savingHandler } from "$lib/api/saving-handler";
 
     import { getProgress } from "$lib/task-manager/queue";
     import { queueVisible } from "$lib/state/queue-visibility";
     import { currentTasks } from "$lib/state/task-manager/current-tasks";
-    import { clearQueue, queue as readableQueue } from "$lib/state/task-manager/queue";
+    import { clearQueue, removeItem, queue as readableQueue } from "$lib/state/task-manager/queue";
 
     import SectionHeading from "$components/misc/SectionHeading.svelte";
     import PopoverContainer from "$components/misc/PopoverContainer.svelte";
@@ -17,6 +19,8 @@
     import ProcessingQueueStub from "$components/queue/ProcessingQueueStub.svelte";
 
     import IconX from "@tabler/icons-svelte/IconX.svelte";
+    import IconReload from "@tabler/icons-svelte/IconReload.svelte";
+    import IconDownload from "@tabler/icons-svelte/IconDownload.svelte";
 
     const popoverAction = () => {
         $queueVisible = !$queueVisible;
@@ -29,6 +33,65 @@
     ).reduce((a, b) => a + b) / (100 * queue.length) : 0);
 
     let indeterminate = $derived(queue.length > 0 && totalProgress === 0);
+
+    let failedItems = $derived(
+        queue.filter(([, item]) => item.state === "error" && item.canRetry)
+    );
+
+    let doneItems = $derived(
+        queue.filter(([, item]) => item.state === "done" && item.resultFile)
+    );
+
+    let allDone = $derived(queue.length > 0 && doneItems.length === queue.length);
+
+    let retryingAll = $state(false);
+    let savingAll = $state(false);
+
+    const MAX_RETRIES = 3;
+    const BACKOFF_TIME_MS = 5000;
+
+    // track retry counts per item id
+    let retryCounts: Record<string, number> = $state({});
+
+    // filter out items that have exceeded max retries
+    let retryableItems = $derived(
+        failedItems.filter(([id]) => (retryCounts[id] ?? 0) < MAX_RETRIES)
+    );
+
+    const retryFailed = async () => {
+        retryingAll = true;
+        const itemsToRetry = [...retryableItems];
+        for (let i = 0; i < itemsToRetry.length; i++) {
+            const [id, item] = itemsToRetry[i];
+            if (item.state === "error" && item.canRetry && item.originalRequest) {
+                retryCounts[id] = (retryCounts[id] ?? 0) + 1;
+                await savingHandler({
+                    request: item.originalRequest,
+                    oldTaskId: id,
+                });
+                // backoff time between retries to prevent frequent failures
+                if (i < itemsToRetry.length - 1) {
+                    await new Promise(r => setTimeout(r, BACKOFF_TIME_MS));
+                }
+            }
+        }
+        retryingAll = false;
+    };
+
+    const saveAll = async () => {
+        savingAll = true;
+        for (const [id, item] of doneItems) {
+            if (item.state === "done" && item.resultFile) {
+                openFile(new File([item.resultFile], item.filename, {
+                    type: item.mimeType,
+                }));
+                removeItem(id);
+                // small delay between downloads to avoid browser blocking
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+        savingAll = false;
+    };
 
     onNavigate(() => {
         $queueVisible = false;
@@ -67,6 +130,28 @@
                     nolink
                 />
                 <div class="header-buttons">
+                    {#if retryableItems.length > 0}
+                        <button
+                            class="retry-button"
+                            onclick={retryFailed}
+                            disabled={retryingAll}
+                            tabindex={!$queueVisible ? -1 : undefined}
+                        >
+                            <IconReload />
+                            {$t("button.retry")} ({retryableItems.length})
+                        </button>
+                    {/if}
+                    {#if allDone}
+                        <button
+                            class="save-button"
+                            onclick={saveAll}
+                            disabled={savingAll}
+                            tabindex={!$queueVisible ? -1 : undefined}
+                        >
+                            <IconDownload />
+                            {$t("button.save")} ({doneItems.length})
+                        </button>
+                    {/if}
                     {#if queue.length}
                         <button
                             class="clear-button"
@@ -155,6 +240,19 @@
 
     .clear-button {
         color: var(--medium-red);
+    }
+
+    .retry-button {
+        color: var(--secondary);
+    }
+
+    .save-button {
+        color: var(--medium-green);
+    }
+
+    .header-buttons button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     #processing-list {

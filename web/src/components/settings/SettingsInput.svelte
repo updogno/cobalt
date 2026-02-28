@@ -19,13 +19,13 @@
     import IconEye from "@tabler/icons-svelte/IconEye.svelte";
     import IconEyeOff from "@tabler/icons-svelte/IconEyeOff.svelte";
 
-    type SettingsInputType = "url" | "uuid";
+    type SettingsInputType = "url" | "uuid" | "imageUrl";
 
     export let settingId: Id;
     export let settingContext: Context;
     export let placeholder: string;
     export let altText: string;
-    export let type: "url" | "uuid" = "url";
+    export let type: SettingsInputType = "url";
 
     export let sensitive = false;
     export let showInstanceWarning = false;
@@ -50,9 +50,9 @@
             return;
         }
 
-        if (type === "url") {
+        if (type === "url" || type === "imageUrl") {
             try {
-                new URL(inputValue)?.origin?.toString();
+                new URL(inputValue);
                 validInput = true;
                 return;
             } catch {
@@ -67,10 +67,20 @@
     const writeToSettings = (value: string, type: SettingsInputType) => {
         // we assume that the url is valid and error can't be thrown here
         // since it was tested before by checkInput()
+        let finalValue: string;
+        if (!value) {
+            finalValue = "";
+        } else if (type === "url") {
+            finalValue = new URL(value).origin.toString();
+        } else if (type === "imageUrl") {
+            finalValue = value; // keep full URL for images
+        } else {
+            finalValue = value;
+        }
+        
         updateSetting({
             [settingContext]: {
-                [settingId]:
-                    type === "url" ? new URL(value).origin.toString() : value,
+                [settingId]: finalValue,
             },
         });
         inputValue = String(get(settings)[settingContext][settingId]);

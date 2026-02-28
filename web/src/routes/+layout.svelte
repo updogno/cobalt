@@ -41,6 +41,28 @@
     $: preloadAssets = false;
     $: plausibleLoaded = false;
 
+    $: customBackgroundStyle = (() => {
+        if ($settings.appearance.theme !== "custom") return "";
+        
+        let styles: string[] = [];
+        
+        if ($settings.appearance.customBackgroundUrl) {
+            styles.push(`--custom-bg-image: url(${$settings.appearance.customBackgroundUrl})`);
+            styles.push(`--custom-bg-blur: ${$settings.appearance.customBackgroundBlur || 0}px`);
+            const darkenValue = ($settings.appearance.customBackgroundDarken || 0) / 100;
+            styles.push(`--custom-bg-darken: ${darkenValue}`);
+            styles.push(`--custom-content-bg: transparent`);
+        } else if ($settings.appearance.customBackgroundColor) {
+            styles.push(`--custom-content-bg: ${$settings.appearance.customBackgroundColor}`);
+        }
+        
+        if ($settings.appearance.customSidebarColor) {
+            styles.push(`--sidebar-bg: ${$settings.appearance.customSidebarColor}`);
+        }
+        
+        return styles.join("; ");
+    })();
+
     afterNavigate(async () => {
         const to_focus: HTMLElement | null =
             document.querySelector("[data-first-focus]");
@@ -105,6 +127,8 @@
     <div
         id="cobalt"
         class:loaded={browser}
+        class:custom-theme={$settings.appearance.theme === "custom"}
+        style={customBackgroundStyle}
         data-chrome={device.browser.chrome}
         data-iphone={device.is.iPhone}
         data-mobile={device.is.mobile}
@@ -165,6 +189,41 @@
         background-color: var(--primary);
         box-shadow: 0 0 0 var(--content-border-thickness) var(--content-border);
         margin-left: var(--content-border-thickness);
+    }
+
+    .custom-theme #content {
+        position: relative;
+        background-color: var(--custom-content-bg, var(--primary));
+    }
+
+    .custom-theme #content::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: var(--custom-bg-image, none);
+        background-size: cover;
+        background-position: center;
+        filter: blur(var(--custom-bg-blur, 0px));
+        z-index: -2;
+        /* Extend slightly to prevent blur edge artifacts */
+        margin: calc(var(--custom-bg-blur, 0px) * -1);
+        padding: var(--custom-bg-blur, 0px);
+    }
+
+    .custom-theme #content::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: black;
+        opacity: var(--custom-bg-darken, 0);
+        z-index: -1;
+        pointer-events: none;
     }
 
     @media (display-mode: standalone) and (min-width: 535px)  {
