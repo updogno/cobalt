@@ -1,7 +1,7 @@
 import { get } from "svelte/store";
 import { currentApiURL } from "$lib/api/api-url";
 import cachedServiceStatus from "$lib/state/service-status";
-import type { ServiceStatusResponse, ServiceInstance } from "$lib/types/service-status";
+import type { ServiceStatusResponse, ServiceInstance, ServiceTestResult } from "$lib/types/service-status";
 
 const SERVICE_STATUS_API = "https://cobalt.directory/api/tests";
 const CACHE_DURATION_MS = 5 * 60 * 1000;
@@ -116,7 +116,7 @@ export const getAllServiceTests = (): Record<string, ServiceStatus> => {
 
     const results: Record<string, ServiceStatus> = {};
 
-    for (const [key, test] of Object.entries(instance.tests)) {
+    for (const [key, test] of Object.entries(instance.tests) as [string, ServiceTestResult][]) {
         if (key === "Frontend" || !test.friendly) continue;
         
         const friendlyLower = test.friendly.toLowerCase();
