@@ -68,6 +68,12 @@ export const services = {
         ],
         tld: "ru",
     },
+    linkedin: {
+        patterns: [
+            "feed/update/urn/:li/:activity/:(:id)"
+        ],
+        playlistSupport: false
+    },
     pinterest: {
         patterns: [
             "pin/:id",

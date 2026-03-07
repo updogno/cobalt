@@ -81,6 +81,13 @@ function aliasURL(url) {
             }
             break;
 
+        case "linkedin":
+            if (parts[1] === "posts") {
+                const postId = parts.pop().split("-").at(-2)
+                url = new URL(`https://linkedin.com/feed/update/urn:li:activity:${postId}`)
+            }
+            break;
+
         case "ddinstagram":
             if (services.instagram.altDomains.includes(host.domain) && [null, 'd', 'g'].includes(host.subdomain)) {
                 url.hostname = 'instagram.com';

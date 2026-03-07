@@ -84,4 +84,7 @@ export const testers = {
     "youtube": pattern =>
         pattern.id?.length <= 11
         || pattern.postId?.length <= 40,
+
+    "linkedin": pattern =>
+        pattern.id?.length === 19,
 }
