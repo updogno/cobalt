@@ -91,8 +91,6 @@ const fetchEncryptedHostFlags = async (fetch) => {
 let poModule;
 
 const cloneInnertube = async (customFetch, useSession, requestIP) => {
-    Platform.shim.eval = youtubeEval;
-
     const shouldRefreshPlayer = globalThis.FORCE_RESET_INNERTUBE_PLAYER || lastRefreshedAt + PLAYER_REFRESH_PERIOD < new Date();
 
     const rawCookie = getCookie('youtube');
