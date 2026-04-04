@@ -34,6 +34,10 @@ const git = {
 const version = await getVersion();
 
 const acceptRegex = /^application\/json(; charset=utf-8)?$/;
+const SERVICE_STATUS_API = "https://cobalt.directory/api/tests";
+const SERVICE_STATUS_CACHE_DURATION_MS = 5 * 60 * 1000;
+
+let cachedServiceStatus;
 
 const corsConfig = env.corsWildcard ? {} : {
     origin: env.corsURL,
@@ -52,6 +56,68 @@ const isSessionRequired = (ip) => {
     const parsedIp = ipaddr.parse(ip);
     return env.sessionRequiredCIDRs.some(cidr => parsedIp.kind == cidr[0].kind && parsedIp.match(cidr));
 }
+
+const getCurrentApiHostname = () => {
+    try {
+        return new URL(env.apiURL).hostname;
+    } catch {
+        return "";
+    }
+};
+
+const getServiceStatusFromDirectory = async () => {
+    const now = Date.now();
+
+    if (cachedServiceStatus && (now - cachedServiceStatus.fetchedAt) < SERVICE_STATUS_CACHE_DURATION_MS) {
+        return cachedServiceStatus.status;
+    }
+
+    try {
+        const response = await fetch(SERVICE_STATUS_API, {
+            signal: AbortSignal.timeout(15000),
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const status = await response.json();
+        if (!status?.data) {
+            return null;
+        }
+
+        cachedServiceStatus = {
+            status,
+            fetchedAt: now,
+        };
+
+        return status;
+    } catch {
+        return null;
+    }
+};
+
+const getCurrentInstanceServiceStatus = async () => {
+    const status = await getServiceStatusFromDirectory();
+    if (!status?.data?.length) {
+        return null;
+    }
+
+    const hostname = getCurrentApiHostname();
+    if (!hostname) {
+        return null;
+    }
+
+    const instance = status.data.find(entry => entry.api === hostname);
+    if (!instance) {
+        return null;
+    }
+
+    return {
+        lastUpdatedUTC: status.lastUpdatedUTC,
+        data: [instance],
+    };
+};
 
 export const runAPI = async (express, app, __dirname, isPrimary = true) => {
     const startTime = new Date();
@@ -321,6 +387,16 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
         }
 
         return stream(res, streamInfo);
+    });
+
+    app.get('/service-status', async (_, res) => {
+        const status = await getCurrentInstanceServiceStatus();
+
+        if (!status) {
+            return fail(res, "error.api.generic");
+        }
+
+        return res.status(200).json(status);
     });
 
     app.get('/', (req, res) => {

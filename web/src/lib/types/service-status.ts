@@ -25,4 +25,5 @@ export type ServiceStatusResponse = {
 export type ServiceStatusCache = {
     status: ServiceStatusResponse;
     fetchedAt: number;
+    origin: string;
 };

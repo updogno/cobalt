@@ -3,7 +3,6 @@ import { currentApiURL } from "$lib/api/api-url";
 import cachedServiceStatus from "$lib/state/service-status";
 import type { ServiceStatusResponse, ServiceInstance, ServiceTestResult } from "$lib/types/service-status";
 
-const SERVICE_STATUS_API = "https://cobalt.directory/api/tests";
 const CACHE_DURATION_MS = 5 * 60 * 1000;
 
 const serviceNameToTestKey: Record<string, string> = {
@@ -18,25 +17,13 @@ const normalizeServiceName = (name: string): string => {
     return serviceNameToTestKey[name.toLowerCase()] || name.toLowerCase();
 };
 
-const getCurrentApiHostname = (): string => {
-    try {
-        const apiUrl = currentApiURL();
-        return new URL(apiUrl).hostname;
-    } catch {
-        return "";
-    }
-};
-
-const findMatchingInstance = (data: ServiceInstance[]): ServiceInstance | undefined => {
-    const hostname = getCurrentApiHostname();
-    if (!hostname) return undefined;
-    
-    return data.find(instance => instance.api === hostname);
+const getCurrentInstance = (data: ServiceInstance[]): ServiceInstance | undefined => {
+    return data[0];
 };
 
 const request = async (): Promise<ServiceStatusResponse | null> => {
     try {
-        const response = await fetch(SERVICE_STATUS_API, {
+        const response = await fetch(`${currentApiURL()}/service-status`, {
             signal: AbortSignal.timeout(15000),
         });
 
@@ -53,8 +40,9 @@ const request = async (): Promise<ServiceStatusResponse | null> => {
 export const getServiceStatus = async (): Promise<boolean> => {
     const cache = get(cachedServiceStatus);
     const now = Date.now();
+    const origin = currentApiURL();
 
-    if (cache && (now - cache.fetchedAt) < CACHE_DURATION_MS) {
+    if (cache && cache.origin === origin && (now - cache.fetchedAt) < CACHE_DURATION_MS) {
         return true;
     }
 
@@ -67,6 +55,7 @@ export const getServiceStatus = async (): Promise<boolean> => {
     cachedServiceStatus.set({
         status: freshStatus,
         fetchedAt: now,
+        origin,
     });
 
     return true;
@@ -80,11 +69,11 @@ export type ServiceStatus = {
 export const getServiceStatusForName = (serviceName: string): ServiceStatus => {
     const cache = get(cachedServiceStatus);
     
-    if (!cache || !cache.status.data) {
+    if (!cache || !cache.status.data.length) {
         return { status: null };
     }
 
-    const instance = findMatchingInstance(cache.status.data);
+    const instance = getCurrentInstance(cache.status.data);
     if (!instance || !instance.online || !instance.tests) {
         return { status: null };
     }
@@ -105,11 +94,11 @@ export const getServiceStatusForName = (serviceName: string): ServiceStatus => {
 export const getAllServiceTests = (): Record<string, ServiceStatus> => {
     const cache = get(cachedServiceStatus);
     
-    if (!cache || !cache.status.data) {
+    if (!cache || !cache.status.data.length) {
         return {};
     }
 
-    const instance = findMatchingInstance(cache.status.data);
+    const instance = getCurrentInstance(cache.status.data);
     if (!instance || !instance.online || !instance.tests) {
         return {};
     }
