@@ -33,15 +33,14 @@ export class MemoryStorage extends AbstractStorage {
     async res() {
         // if we didn't need as much space as we allocated for some reason,
         // shrink the buffers so that we don't inflate the file with zeroes
-        const outputView: Uint8Array<ArrayBuffer>[] = [];
+        const outputView: BlobPart[] = [];
 
         for (let i = 0; i < this.#chunks.length; ++i) {
-            outputView.push(
-                this.#chunks[i].subarray(
-                    0,
-                    Math.min(this.#chunkSize, this.#actualSize),
-                ),
+            const chunk = this.#chunks[i].subarray(
+                0,
+                Math.min(this.#chunkSize, this.#actualSize),
             );
+            outputView.push(Uint8Array.from(chunk));
 
             this.#actualSize -= this.#chunkSize;
             if (this.#actualSize <= 0) {
