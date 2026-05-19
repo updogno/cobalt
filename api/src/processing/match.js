@@ -31,6 +31,7 @@ import loom from "./services/loom.js";
 import facebook from "./services/facebook.js";
 import bluesky from "./services/bluesky.js";
 import newgrounds from "./services/newgrounds.js";
+import threads from "./services/threads.js";
 
 const MAX_RETRY_AMOUNT = 5;
 
@@ -291,6 +292,14 @@ export default async function match({ host, patternMatch, params, authType, retr
                 r = await newgrounds({
                     ...patternMatch,
                     quality: params.videoQuality,
+                });
+                break;
+
+            case "threads":
+                r = await threads({
+                    ...patternMatch,
+                    alwaysProxy: params.alwaysProxy,
+                    dispatcher,
                 });
                 break;
 

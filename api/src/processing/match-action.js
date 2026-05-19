@@ -107,6 +107,7 @@ export default function({
                 case "bsky":
                 case "xiaohongshu":
                 case "youtube":
+                case "threads":
                     params = { picker: r.picker };
                     break;
 
@@ -199,6 +200,7 @@ export default function({
                 case "streamable":
                 case "snapchat":
                 case "twitch":
+                case "threads":
                     responseType = "redirect";
                     break;
             }
