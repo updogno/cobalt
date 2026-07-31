@@ -1,5 +1,5 @@
 import { get } from "svelte/store";
-import { currentApiURL } from "$lib/api/api-url";
+import { currentApiURL } from "$lib/api/api-url-lb";
 import cachedServiceStatus from "$lib/state/service-status";
 import type { ServiceStatusResponse, ServiceInstance, ServiceTestResult } from "$lib/types/service-status";
 
