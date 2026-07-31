@@ -33,7 +33,7 @@ const request = async (): Promise<ServiceStatusResponse | null> => {
             return null;
         }
 
-        const response = await fetch(`${apiUrl}/service-status`, {
+        const response = await fetch(`${apiUrl}service-status`, {
             signal: AbortSignal.timeout(15000),
         });
 
