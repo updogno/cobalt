@@ -1,7 +1,11 @@
 import { get } from "svelte/store";
 import { currentApiURL } from "$lib/api/api-url-lb";
 import cachedServiceStatus from "$lib/state/service-status";
-import type { ServiceStatusResponse, ServiceInstance, ServiceTestResult } from "$lib/types/service-status";
+import type {
+    ServiceStatusResponse,
+    ServiceInstance,
+    ServiceTestResult,
+} from "$lib/types/service-status";
 
 const CACHE_DURATION_MS = 5 * 60 * 1000;
 
@@ -23,7 +27,13 @@ const getCurrentInstance = (data: ServiceInstance[]): ServiceInstance | undefine
 
 const request = async (): Promise<ServiceStatusResponse | null> => {
     try {
-        const response = await fetch(`${currentApiURL()}/service-status`, {
+        const apiUrl = await currentApiURL();
+
+        if (!apiUrl) {
+            return null;
+        }
+
+        const response = await fetch(`${apiUrl}/service-status`, {
             signal: AbortSignal.timeout(15000),
         });
 
@@ -40,7 +50,12 @@ const request = async (): Promise<ServiceStatusResponse | null> => {
 export const getServiceStatus = async (): Promise<boolean> => {
     const cache = get(cachedServiceStatus);
     const now = Date.now();
-    const origin = currentApiURL();
+
+    const origin = await currentApiURL();
+
+    if (!origin) {
+        return false;
+    }
 
     if (cache && cache.origin === origin && (now - cache.fetchedAt) < CACHE_DURATION_MS) {
         return true;
@@ -68,19 +83,20 @@ export type ServiceStatus = {
 
 export const getServiceStatusForName = (serviceName: string): ServiceStatus => {
     const cache = get(cachedServiceStatus);
-    
+
     if (!cache || !cache.status.data.length) {
         return { status: null };
     }
 
     const instance = getCurrentInstance(cache.status.data);
+
     if (!instance || !instance.online || !instance.tests) {
         return { status: null };
     }
 
     const testKey = normalizeServiceName(serviceName);
     const test = instance.tests[testKey];
-    
+
     if (!test) {
         return { status: null };
     }
@@ -93,12 +109,13 @@ export const getServiceStatusForName = (serviceName: string): ServiceStatus => {
 
 export const getAllServiceTests = (): Record<string, ServiceStatus> => {
     const cache = get(cachedServiceStatus);
-    
+
     if (!cache || !cache.status.data.length) {
         return {};
     }
 
     const instance = getCurrentInstance(cache.status.data);
+
     if (!instance || !instance.online || !instance.tests) {
         return {};
     }
@@ -107,9 +124,8 @@ export const getAllServiceTests = (): Record<string, ServiceStatus> => {
 
     for (const [key, test] of Object.entries(instance.tests) as [string, ServiceTestResult][]) {
         if (key === "Frontend" || !test.friendly) continue;
-        
-        const friendlyLower = test.friendly.toLowerCase();
-        results[friendlyLower] = {
+
+        results[test.friendly.toLowerCase()] = {
             status: test.status,
             message: test.message,
         };
