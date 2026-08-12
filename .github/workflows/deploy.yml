@@ -1,0 +1,53 @@
+name: Deploy Worker
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    env:
+        WEB_DEFAULT_API: ${{ vars.WEB_DEFAULT_API }}
+        WEB_HOST: ${{ vars.WEB_HOST }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check configuration
+        run: |
+          if [ -z "$WEB_DEFAULT_API" ]; then
+            echo "::error::repository variable WEB_DEFAULT_API is not set."
+            echo "::error::set it to your load balancer url, e.g. https://cobalt-api.example.com"
+            exit 1
+          fi
+      - name: Install pnpm
+        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+        working-directory: ./web/
+      - name: Build static files
+        run: pnpm build
+        working-directory: ./web/
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+            name: web-build
+            path: web/build
+  deploy:
+    env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+            name: web-build
+            path: web/build
+      - name: Deploy Worker
+        run: npx wrangler deploy
+        working-directory: ./web
