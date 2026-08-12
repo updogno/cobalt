@@ -44,7 +44,7 @@
     let downloading = $state(false);
 
     const retry = async (info: CobaltQueueItem) => {
-        if (info.canRetry && info.originalRequest) {
+        if (info.state !== "pending" && info.canRetry && info.originalRequest) {
             retrying = true;
             await savingHandler({
                 request: info.originalRequest,
@@ -59,7 +59,7 @@
 
         downloadFile({
             file: new File([file], info.filename, {
-                type: info.mimeType,
+                type: info.state !== "pending" ? info.mimeType : undefined,
             }),
         });
 
@@ -133,10 +133,17 @@
 
         case "waiting":
             return $t("queue.state.waiting");
+
+        case "pending":
+            return $t("queue.state.pending");
         }
     };
 
     const getWorkerProgress = (item: CobaltQueueItem, workerId: UUID): number | undefined => {
+        if (item.state === "pending") {
+            return;
+        }
+
         if (item.state === 'running' && item.pipelineResults[workerId]) {
             return 100;
         }
@@ -206,6 +213,11 @@
                 {/if}
                 {#if info.state === "running" || retrying}
                     <div class="status-spinner">
+                        <IconLoader2 />
+                    </div>
+                {/if}
+                {#if info.state === "pending"}
+                    <div class="status-spinner status-pending">
                         <IconLoader2 />
                     </div>
                 {/if}
@@ -333,6 +345,10 @@
     .status-spinner,
     .status-text {
         display: flex;
+    }
+
+    .status-pending {
+        opacity: 0.5;
     }
 
     .status-text {

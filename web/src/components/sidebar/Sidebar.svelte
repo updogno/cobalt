@@ -8,6 +8,7 @@
     import SidebarTab from "$components/sidebar/SidebarTab.svelte";
 
     import IconDownload from "@tabler/icons-svelte/IconDownload.svelte";
+    import IconPlaylist from "@tabler/icons-svelte/IconPlaylist.svelte";
     import IconSettings from "@tabler/icons-svelte/IconSettings.svelte";
 
     import IconRepeat from "@tabler/icons-svelte/IconRepeat.svelte";
@@ -32,6 +33,9 @@
     <div id="sidebar-tabs" role="tablist">
         <div id="sidebar-actions" class="sidebar-inner-container">
             <SidebarTab name="save" path="/" icon={IconDownload} />
+            {#if !$settings.appearance.hidePlaylistTab}
+                <SidebarTab name="playlist" path="/playlist" icon={IconPlaylist} />
+            {/if}
             {#if !$settings.appearance.hideRemuxTab}
                 <SidebarTab name="remux" path="/remux" icon={IconRepeat} beta />
             {/if}

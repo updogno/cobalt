@@ -1,0 +1,16 @@
+{
+    "input.placeholder": "paste the playlist link here",
+
+    "services.title": "supported playlist services",
+    "services.title_show": "show supported playlist services",
+    "services.title_hide": "hide supported playlist services",
+    "services.disclaimer": "support for a service does not imply affiliation, endorsement, or any form of support other than technical compatibility.",
+
+    "source.credit": "playlist support based on",
+    "source.credit.link": "hyperdefined's playlist downloader",
+
+    "instance.warning.title": "custom instance",
+    "instance.warning": "you're using a custom instance. playlist saving only works on instances that support it, so if nothing happens, switch back to the default instance in processing settings.",
+
+    "label.community_instance": "community instance | playlist saving"
+}

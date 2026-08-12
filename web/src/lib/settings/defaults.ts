@@ -13,6 +13,7 @@ const defaultSettings: CobaltSettings = {
         language: defaultLocale,
         autoLanguage: true,
         hideRemuxTab: false,
+        hidePlaylistTab: false,
         customBackgroundUrl: "",
         customBackgroundColor: "",
         customSidebarColor: "",

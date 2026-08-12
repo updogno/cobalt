@@ -229,7 +229,7 @@ export const createSavePipeline = (
 export const getProgress = (item: CobaltQueueItem, currentTasks: CobaltCurrentTasks): number => {
     if (item.state === 'done' || item.state === 'error') {
         return 1;
-    } else if (item.state === 'waiting') {
+    } else if (item.state === 'waiting' || item.state === 'pending') {
         return 0;
     }
 

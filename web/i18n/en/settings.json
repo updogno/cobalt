@@ -170,5 +170,7 @@
 
     "tabs": "navigation",
     "tabs.hide_remux": "hide the remux tab",
-    "tabs.hide_remux.description": "if you don't use the remux tool, you can hide it from the navigation bar."
+    "tabs.hide_remux.description": "if you don't use the remux tool, you can hide it from the navigation bar.",
+    "tabs.hide_playlist": "hide the playlist tab",
+    "tabs.hide_playlist.description": "if you don't save playlists, you can hide the tab from the navigation bar."
 }

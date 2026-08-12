@@ -103,13 +103,19 @@
     />
 </SettingsCategory>
 
-{#if device.is.mobile}
-    <SettingsCategory sectionId="tabs" title={$t("settings.tabs")}>
+<SettingsCategory sectionId="tabs" title={$t("settings.tabs")}>
+    {#if device.is.mobile}
         <SettingsToggle
             settingContext="appearance"
             settingId="hideRemuxTab"
             title={$t("settings.tabs.hide_remux")}
             description={$t("settings.tabs.hide_remux.description")}
         />
-    </SettingsCategory>
-{/if}
+    {/if}
+    <SettingsToggle
+        settingContext="appearance"
+        settingId="hidePlaylistTab"
+        title={$t("settings.tabs.hide_playlist")}
+        description={$t("settings.tabs.hide_playlist.description")}
+    />
+</SettingsCategory>

@@ -4,6 +4,7 @@ export type CobaltSettingsV5 = Omit<CobaltSettingsV4, 'schemaVersion' | 'advance
     schemaVersion: 5,
     appearance: Omit<CobaltSettingsV4['appearance'], 'reduceMotion' | 'reduceTransparency'> & {
         hideRemuxTab: boolean,
+        hidePlaylistTab: boolean,
     },
     accessibility: {
         reduceMotion: boolean;

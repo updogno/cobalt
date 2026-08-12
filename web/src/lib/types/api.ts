@@ -100,7 +100,9 @@ export type CobaltServerInfo = {
         url: string,
         startTime: string,
         turnstileSitekey?: string,
-        services: string[]
+        services: string[],
+        // only sent by instances that support playlist saving
+        playlistServices?: string[],
     },
     git: {
         branch: string,
