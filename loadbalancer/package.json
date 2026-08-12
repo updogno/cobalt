@@ -1,0 +1,18 @@
+{
+    "name": "cobalt-lb",
+    "description": "load balancer for cobalt api instances, running on cloudflare workers",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "check": "tsc --noEmit",
+        "test": "node --test src/*.test.ts"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^5.20260804.1",
+        "@types/node": "^24.10.1",
+        "typescript": "^5.9.3",
+        "wrangler": "^4.121.0"
+    }
+}

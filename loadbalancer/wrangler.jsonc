@@ -1,0 +1,44 @@
+{
+    "name": "cobalt-lb",
+    "main": "./src/index.ts",
+    "compatibility_date": "2025-06-01",
+    "observability": {
+        "enabled": true
+    },
+    "vars": {
+        // comma separated list of cobalt api instances to balance across.
+        // these must be on the same cloudflare zone as this worker, otherwise
+        // cloudflare replaces the visitor ip on the subrequest and sessions break.
+        "ORIGINS": "https://instance-one.example.com,https://instance-two.example.com"
+
+        // for geo steering or per-instance health check paths, use ENDPOINTS
+        // instead of ORIGINS, and set STEERING to "geo":
+        //
+        // "ENDPOINTS": "[{\"url\":\"https://eu.example.com\",\"geo\":{\"continents\":[\"EU\"]}},{\"url\":\"https://us.example.com\",\"geo\":{\"continents\":[\"NA\"]}}]",
+        // "STEERING": "geo",
+
+        // how an instance is picked. "random" (default) spreads traffic;
+        // "fail-forward" prefers the first; "async-block" and "promise.any"
+        // health check first.
+        // "AVAILABILITY": "random",
+
+        // statuses that trigger a failover.
+        // defaults to 502,503,504,521,522,523,524
+        // "FAILOVER_ON_STATUSES": "502,503,504",
+
+        // health check tuning, only used by async-block and promise.any
+        // "HEALTH_CHECK_TTL": "30000",
+        // "HEALTH_CHECK_TIMEOUT": "5000",
+
+        // adds X-Load-Balancer-* response headers. off by default so the
+        // proxy stays transparent
+        // "DEBUG_HEADERS": "1",
+
+        // notified with the tried instances when every instance failed
+        // "RECOVERY_WEBHOOK": "https://example.com/alert"
+    }
+    // point this at the hostname the frontend uses as WEB_DEFAULT_API:
+    // "routes": [
+    //     { "pattern": "cobalt-api.example.com", "custom_domain": true }
+    // ]
+}
