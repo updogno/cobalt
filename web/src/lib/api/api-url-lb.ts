@@ -1,6 +1,10 @@
 import env from "$lib/env";
 
 export const currentApiURL = async (): Promise<string | null> => {
+    if (!env.DEFAULT_API) {
+        return null;
+    }
+
     try {
         const response = await fetch(env.DEFAULT_API, {
             signal: AbortSignal.timeout(15000),
