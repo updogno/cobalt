@@ -71,7 +71,7 @@ let unavailableResponses = 0;
 
 let encryptedHostFlags = "";
 const fetchEncryptedHostFlags = async (fetch) => {
-    const embedResp = await fetch("https://youtube.com/embed/QfKmnuHMpYo", {
+    const embedResp = await fetch("https://youtube.com/embed/ihlN5nf1qew", {
         headers: {
             "Referer": "https://www.google.com"
         }
