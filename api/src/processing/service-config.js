@@ -70,9 +70,8 @@ export const services = {
     },
     linkedin: {
         patterns: [
-            "feed/update/urn/:li/:activity/:(:id)"
+            "feed/update/urn/:li/:activity/:id"
         ],
-        playlistSupport: false
     },
     pinterest: {
         patterns: [
