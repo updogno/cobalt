@@ -8,6 +8,7 @@
 
     import IconLock from "@tabler/icons-svelte/IconLock.svelte";
     import IconComet from "@tabler/icons-svelte/IconComet.svelte";
+    import IconServer from "@tabler/icons-svelte/IconServer.svelte";
     import IconChecklist from "@tabler/icons-svelte/IconChecklist.svelte";
     import IconUsersGroup from "@tabler/icons-svelte/IconUsersGroup.svelte";
     import IconHeartHandshake from "@tabler/icons-svelte/IconHeartHandshake.svelte";
@@ -27,6 +28,12 @@
                 title={$t("about.page.general")}
                 icon={IconComet}
                 iconColor="blue"
+            />
+            <PageNavTab
+                path="/about/instance"
+                title={$t("about.page.instance")}
+                icon={IconServer}
+                iconColor="green"
             />
             <PageNavTab
                 path="/about/community"
