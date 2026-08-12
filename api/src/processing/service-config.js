@@ -139,6 +139,7 @@ export const services = {
             ":shortLink"
         ],
         subdomains: ["on", "m"],
+        playlistSupport: true,
     },
     streamable: {
         patterns: [
@@ -226,6 +227,7 @@ export const services = {
             "post/:postId",
         ],
         subdomains: ["music", "m"],
+        playlistSupport: true,
     }
 }
 

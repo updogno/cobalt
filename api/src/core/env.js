@@ -48,6 +48,11 @@ export const loadEnvs = (env = process.env) => {
         }
     }));
 
+    // a service only supports playlists if it's also enabled
+    const playlistServices = new Set(
+        [...enabledServices].filter(e => services[e].playlistSupport === true)
+    );
+
     // we need to copy the proxy envs (HTTP_PROXY, HTTPS_PROXY)
     // back into process.env, so that EnvHttpProxyAgent can pick
     // them up later
@@ -92,6 +97,7 @@ export const loadEnvs = (env = process.env) => {
 
         durationLimit: (env.DURATION_LIMIT && parseInt(env.DURATION_LIMIT)) || 10800,
         streamLifespan: (env.TUNNEL_LIFESPAN && parseInt(env.TUNNEL_LIFESPAN)) || 90,
+        playlistMaxItems: (env.PLAYLIST_MAX_ITEMS && parseInt(env.PLAYLIST_MAX_ITEMS)) || 30,
 
         processingPriority: process.platform !== 'win32'
             && env.PROCESSING_PRIORITY
@@ -123,6 +129,7 @@ export const loadEnvs = (env = process.env) => {
 
         allServices,
         enabledServices,
+        playlistServices,
 
         useSystemFFmpeg: env.USE_SYSTEM_FFMPEG === "1",
 

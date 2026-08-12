@@ -20,6 +20,7 @@ import { friendlyServiceName } from "../processing/service-alias.js";
 import { verifyStream } from "../stream/manage.js";
 import { createResponse, normalizeRequest, getIP } from "../processing/request.js";
 import { setupTunnelHandler } from "./itunnel.js";
+import { getPlaylistLinks } from "../processing/playlist.js";
 
 import * as APIKeys from "../security/api-keys.js";
 import * as Cookies from "../processing/cookie/manager.js";
@@ -131,6 +132,9 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
                 startTime: `${startTimestamp}`,
                 turnstileSitekey: isSessionRequired(ip) ? env.turnstileSitekey : undefined,
                 services: [...env.enabledServices].map(e => {
+                    return friendlyServiceName(e);
+                }),
+                playlistServices: [...env.playlistServices].map(e => {
                     return friendlyServiceName(e);
                 }),
             },
@@ -387,6 +391,20 @@ export const runAPI = async (express, app, __dirname, isPrimary = true) => {
         }
 
         return stream(res, streamInfo);
+    });
+
+    app.get('/playlist', apiLimiter, async (req, res) => {
+        const { error, context, status, urls } = await getPlaylistLinks(
+            String(req.query.url || "").trim()
+        );
+
+        if (error) {
+            const { body } = createResponse("error", { code: error, context });
+            return res.status(status).json(body);
+        }
+
+
+        return res.status(200).json({ status: "success", urls });
     });
 
     app.get('/service-status', async (_, res) => {
