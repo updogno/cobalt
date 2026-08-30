@@ -125,11 +125,10 @@ export default async function ({ ownerId, videoId, accessKey, quality, subtitleL
 
     if (!url) return { error: "fetch.fail" };
 
-    const title = video.title?.trim()
-        || video.description?.trim().split(/\r?\n/, 1)[0]
-        || `vk_${ownerId}_${videoId}`;
-
-    const fileMetadata = { title }
+    const fileMetadata = {
+        title: video.title?.trim() ?? "",
+        id: `${ownerId}_${videoId}${accessKey ? `_${accessKey}` : ''}`,
+    }
 
     let subtitles;
     if (subtitleLang && video.subtitles?.length) {
@@ -148,8 +147,8 @@ export default async function ({ ownerId, videoId, accessKey, quality, subtitleL
         fileMetadata,
         filenameAttributes: {
             service: "vk",
-            id: `${ownerId}_${videoId}${accessKey ? `_${accessKey}` : ''}`,
-            title: fileMetadata.title,
+            id: fileMetadata.id,
+            title: fileMetadata.title || fileMetadata.id,
             resolution: `${pickedQuality}p`,
             qualityLabel: `${pickedQuality}p`,
             extension: "mp4"
