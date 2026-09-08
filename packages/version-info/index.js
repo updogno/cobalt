@@ -27,11 +27,19 @@ const readGit = (filename) => {
 }
 
 export const getCommit = async () => {
-    return (await readGit('.git/logs/HEAD'))
-            ?.split('\n')
-            ?.filter(String)
-            ?.pop()
-            ?.split(' ')[1];
+    if (process.env.VERCEL_GIT_COMMIT_SHA) {
+        return process.env.VERCEL_GIT_COMMIT_SHA;
+    }
+
+    try {
+        return (await readGit('.git/logs/HEAD'))
+                ?.split('\n')
+                ?.filter(String)
+                ?.pop()
+                ?.split(' ')[1];
+    } catch {
+        return undefined;
+    }
 }
 
 export const getBranch = async () => {
@@ -43,16 +51,33 @@ export const getBranch = async () => {
         return process.env.WORKERS_CI_BRANCH;
     }
 
-    return (await readGit('.git/HEAD'))
-            ?.replace(/^ref: refs\/heads\//, '')
-            ?.trim();
+    if (process.env.VERCEL_GIT_COMMIT_REF) {
+        return process.env.VERCEL_GIT_COMMIT_REF;
+    }
+
+    try {
+        return (await readGit('.git/HEAD'))
+                ?.replace(/^ref: refs\/heads\//, '')
+                ?.trim();
+    } catch {
+        return undefined;
+    }
 }
 
 export const getRemote = async () => {
-    let remote = (await readGit('.git/config'))
-                    ?.split('\n')
-                    ?.find(line => line.includes('url = '))
-                    ?.split('url = ')[1];
+    if (process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG) {
+        return `${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}`;
+    }
+
+    let remote;
+    try {
+        remote = (await readGit('.git/config'))
+                        ?.split('\n')
+                        ?.find(line => line.includes('url = '))
+                        ?.split('url = ')[1];
+    } catch {
+        return undefined;
+    }
 
     if (remote?.startsWith('git@')) {
         remote = remote.split(':')[1];
@@ -61,10 +86,6 @@ export const getRemote = async () => {
     }
 
     remote = remote?.replace(/\.git$/, '');
-
-    if (!remote) {
-        throw 'could not parse remote';
-    }
 
     return remote;
 }
