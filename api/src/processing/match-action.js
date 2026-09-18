@@ -201,6 +201,7 @@ export default function({
                 case "snapchat":
                 case "twitch":
                 case "threads":
+                case "medal":
                     responseType = "redirect";
                     break;
             }
